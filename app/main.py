@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from .database import create_db_and_tables
 from .models import Product # Importante importar los modelos para que SQLModel los reconozca
+from .routers import products
 
 # Lifespan: Eventos que ocurren al arrancar o apagar la app
 @asynccontextmanager
@@ -19,6 +20,11 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan # Registramos el lifespan
 )
+
+
+# Conectamos las rutas de productos a la app principal
+app.include_router(products.router) 
+# Esto agrega todas las rutas definidas en products.py (/products/, etc.)
 
 
 @app.get("/")

@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  api:
+    build: .
+    container_name: inventory-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/code/app  # <--- MAGIA: Sincroniza tu carpeta local con la del contenedor
+    restart: always

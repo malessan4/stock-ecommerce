@@ -8,5 +8,25 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/code/app  # <--- MAGIA: Sincroniza tu carpeta local con la del contenedor
-    restart: always
+      - ./app:/code/app
+    # ESTO ES NUEVO: Le decimos a la API dónde está la DB
+    environment:
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/inventory_db
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: inventory-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+      - POSTGRES_DB=inventory_db
+    ports:
+      - "5432:5432"
+    # ESTO ES CRUCIAL: Persistencia de datos
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

@@ -1,5 +1,7 @@
 from sqlmodel import SQLModel
 from typing import Optional
+from datetime import datetime
+from enum import Enum
 
 # 1. Base: Lo que tienen en común todos (para no repetir código)
 class ProductBase(SQLModel):
@@ -18,3 +20,12 @@ class ProductCreate(ProductBase):
 class ProductRead(ProductBase):
     id: int
     stock: int
+
+class MovementCreate(SQLModel):
+    product_id: int
+    type: str # Debería ser 'in' o 'out'
+    quantity: int
+
+class MovementRead(MovementCreate):
+    id: int
+    date: datetime

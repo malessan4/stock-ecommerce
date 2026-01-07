@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware # Importante para conectar con Next.js
 from .database import create_db_and_tables
-from .models import Product # Importante importar los modelos para que SQLModel los reconozca
-from .routers import products
+from .routers import products, movements # Importamos ambos routers
 
 # Lifespan: Eventos que ocurren al arrancar o apagar la app
 @asynccontextmanager
@@ -21,11 +21,25 @@ app = FastAPI(
     lifespan=lifespan # Registramos el lifespan
 )
 
+# --- CONFIGURACIÓN DE CORS ---
+# Esto permite que tu frontend (que correrá en el puerto 3000) pueda hablar con este backend (puerto 8000)
+origins = [
+    "http://localhost:3000", # El puerto estándar de Next.js
+    "*" # (Opcional) Permite cualquier origen, útil para pruebas rápidas
+]
 
-# Conectamos las rutas de productos a la app principal
-app.include_router(products.router) 
-# Esto agrega todas las rutas definidas en products.py (/products/, etc.)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # Permitir todos los métodos (GET, POST, PUT, DELETE)
+    allow_headers=["*"], # Permitir todos los headers (Authorization, Content-Type, etc)
+)
+# -----------------------------
 
+# Conectamos las rutas (endpoints) a la app principal
+app.include_router(products.router)
+app.include_router(movements.router)
 
 @app.get("/")
 def read_root():

@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react'; // ⬅️ 1. Importamos useState para manejar el modal
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../app/lib/api';
-import { Package, AlertCircle, Plus } from 'lucide-react'; // ⬅️ 2. Agregamos el icono 'Plus'
-import CreateProductModal from '@/components/CreateProductModal'; // ⬅️ 3. Importamos tu componente Modal
+import { Package, AlertCircle, Plus, PackagePlus } from 'lucide-react'; // ⬅️ Nuevo icono
+import CreateProductModal from '@/components/CreateProductModal';
+import AddStockModal from '@/components/AddStockModal'; // ⬅️ 1. Importamos el nuevo modal
 
-// Definimos el tipo de dato que esperamos
 interface Product {
   id: number;
   name: string;
@@ -16,10 +16,12 @@ interface Product {
 }
 
 export default function Home() {
-  // ⬅️ 4. Estado para controlar si el modal se ve o no
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Consulta de datos (React Query)
+  // ⬅️ 2. Estados para el Modal de Stock
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<{ id: number, name: string } | null>(null);
+
   const { data: products, isLoading, isError } = useQuery<Product[]>({
     queryKey: ['products'],
     queryFn: async () => {
@@ -28,39 +30,40 @@ export default function Home() {
     },
   });
 
+  // Función auxiliar para abrir el modal de stock
+  const openStockModal = (product: Product) => {
+    setSelectedProduct({ id: product.id, name: product.name });
+    setIsStockModalOpen(true);
+  };
+
   return (
     <main className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-5xl mx-auto">
 
-        {/* Encabezado: Ahora usamos flex justify-between para separar título y botón */}
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <Package className="w-10 h-10 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-800">Control de Inventario</h1>
           </div>
 
-          {/* ⬅️ 5. Botón para abrir el modal */}
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium"
           >
             <Plus size={20} />
             Nuevo Producto
           </button>
         </div>
 
-        {/* Estado de Carga */}
         {isLoading && <p className="text-blue-500 animate-pulse">Cargando productos...</p>}
 
-        {/* Estado de Error */}
         {isError && (
           <div className="flex items-center gap-2 text-red-500 bg-red-50 p-4 rounded-lg border border-red-200">
             <AlertCircle />
-            <p>Error al conectar con el Backend. ¿Está encendido Docker?</p>
+            <p>Error al conectar con el Backend.</p>
           </div>
         )}
 
-        {/* Tabla de Datos */}
         {products && (
           <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
             <table className="w-full text-left">
@@ -71,18 +74,19 @@ export default function Home() {
                   <th className="p-4">SKU</th>
                   <th className="p-4">Precio</th>
                   <th className="p-4">Stock</th>
+                  <th className="p-4 text-center">Acciones</th> {/* ⬅️ Nueva columna */}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-gray-500">
-                      No hay productos registrados. ¡Crea el primero!
+                    <td colSpan={6} className="p-8 text-center text-gray-500">
+                      No hay productos registrados.
                     </td>
                   </tr>
                 ) : (
                   products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50 transition">
+                    <tr key={product.id} className="hover:bg-gray-50 transition group">
                       <td className="p-4 text-gray-500">#{product.id}</td>
                       <td className="p-4 font-medium text-gray-800">{product.name}</td>
                       <td className="p-4">
@@ -91,8 +95,19 @@ export default function Home() {
                         </span>
                       </td>
                       <td className="p-4 text-green-600 font-bold">${product.price}</td>
-                      <td className={`p-4 font-bold ${product.stock < 10 ? 'text-red-500' : 'text-gray-700'}`}>
+                      <td className={`p-4 font-bold ${product.stock === 0 ? 'text-red-600' : 'text-blue-600'}`}>
                         {product.stock} u.
+                      </td>
+
+                      {/* ⬅️ Botón de Acción */}
+                      <td className="p-4 text-center">
+                        <button
+                          onClick={() => openStockModal(product)}
+                          className="text-gray-400 hover:text-green-600 hover:bg-green-50 p-2 rounded-full transition tooltip"
+                          title="Agregar Stock"
+                        >
+                          <PackagePlus size={20} />
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -102,11 +117,18 @@ export default function Home() {
           </div>
         )}
 
-        {/* ⬅️ 6. Renderizamos el Modal al final */}
-        {/* Le pasamos el estado 'isOpen' y la función para cerrarlo */}
+        {/* Modal de Crear Producto */}
         <CreateProductModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+        />
+
+        {/* ⬅️ 3. Modal de Agregar Stock */}
+        <AddStockModal
+          isOpen={isStockModalOpen}
+          onClose={() => setIsStockModalOpen(false)}
+          productId={selectedProduct?.id || null}
+          productName={selectedProduct?.name || ''}
         />
 
       </div>
